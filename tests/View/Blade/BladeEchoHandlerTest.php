@@ -17,15 +17,10 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
         });
     }
 
-    public function testBladeHandlersCanBeAddedForAGivenClass()
-    {
-        $this->assertSame('Hello World', $this->compiler->echoHandlers[Fluent::class](new Fluent()));
-    }
-
     public function testBladeHandlerCanInterceptRegularEchos()
     {
         $this->assertSame(
-            "<?php echo e(is_object(\$exampleObject) && isset(app('blade.compiler')->echoHandlers[get_class(\$exampleObject)]) ? call_user_func_array(app('blade.compiler')->echoHandlers[get_class(\$exampleObject)], [\$exampleObject]) : \$exampleObject); ?>",
+            "<?php echo e(app('blade.compiler')->applyEchoHandler(\$exampleObject)); ?>",
             $this->compiler->compileString('{{$exampleObject}}')
         );
     }
@@ -33,7 +28,7 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
     public function testBladeHandlerCanInterceptRawEchos()
     {
         $this->assertSame(
-            "<?php echo is_object(\$exampleObject) && isset(app('blade.compiler')->echoHandlers[get_class(\$exampleObject)]) ? call_user_func_array(app('blade.compiler')->echoHandlers[get_class(\$exampleObject)], [\$exampleObject]) : \$exampleObject; ?>",
+            "<?php echo app('blade.compiler')->applyEchoHandler(\$exampleObject); ?>",
             $this->compiler->compileString('{!!$exampleObject!!}')
         );
     }
@@ -41,7 +36,7 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
     public function testBladeHandlerCanInterceptEscapedEchos()
     {
         $this->assertSame(
-            "<?php echo e(is_object(\$exampleObject) && isset(app('blade.compiler')->echoHandlers[get_class(\$exampleObject)]) ? call_user_func_array(app('blade.compiler')->echoHandlers[get_class(\$exampleObject)], [\$exampleObject]) : \$exampleObject); ?>",
+            "<?php echo e(app('blade.compiler')->applyEchoHandler(\$exampleObject)); ?>",
             $this->compiler->compileString('{{{$exampleObject}}}')
         );
     }
@@ -49,7 +44,7 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
     public function testWhitespaceIsPreservedCorrectly()
     {
         $this->assertSame(
-            "<?php echo e(is_object(\$exampleObject) && isset(app('blade.compiler')->echoHandlers[get_class(\$exampleObject)]) ? call_user_func_array(app('blade.compiler')->echoHandlers[get_class(\$exampleObject)], [\$exampleObject]) : \$exampleObject); ?>\n\n",
+            "<?php echo e(app('blade.compiler')->applyEchoHandler(\$exampleObject)); ?>\n\n",
             $this->compiler->compileString("{{\$exampleObject}}\n")
         );
     }
