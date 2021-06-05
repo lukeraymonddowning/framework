@@ -69,4 +69,25 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
             ->beforeLast('?>')
         );
     }
+
+    public function testHandlerLogicWorksCorrectlyWithSemicolon()
+    {
+        $this->expectExceptionMessage('The fluent object has been successfully handled!');
+
+        $this->compiler->stringable(Fluent::class, function ($object) {
+            throw new Exception('The fluent object has been successfully handled!');
+        });
+
+        app()->singleton('blade.compiler', function () {
+            return $this->compiler;
+        });
+
+        $exampleObject = new Fluent();
+
+        eval(
+        Str::of($this->compiler->compileString('{{$exampleObject;}}'))
+            ->after('<?php')
+            ->beforeLast('?>')
+        );
+    }
 }

@@ -3,6 +3,7 @@
 namespace Illuminate\View\Compilers\Concerns;
 
 use Closure;
+use Illuminate\Support\Str;
 
 trait CompilesEchos
 {
@@ -129,7 +130,7 @@ trait CompilesEchos
      */
     protected function wrapInEchoHandler($value)
     {
-        return empty($this->echoHandlers) ? $value : "app('blade.compiler')->applyEchoHandler({$value})";
+        return empty($this->echoHandlers) ? $value : 'app(\'blade.compiler\')->applyEchoHandler(' . Str::beforeLast($value, ';') . ')';
     }
 
     /**

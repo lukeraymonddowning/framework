@@ -2,12 +2,14 @@
 
 namespace Illuminate\Console;
 
+use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
+use LogicException;
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class Command extends SymfonyCommand
+class Command extends SymfonyCommand implements \ArrayAccess
 {
     use Concerns\CallsCommands,
         Concerns\HasParameters,
@@ -198,5 +200,32 @@ class Command extends SymfonyCommand
     public function setLaravel($laravel)
     {
         $this->laravel = $laravel;
+    }
+
+    public function __get($name)
+    {
+        return $this->offsetGet($name);
+    }
+
+    public function offsetExists($offset)
+    {
+        return collect($this->arguments())
+            ->contains(function($_, $key) use($offset) { return Str::studly($key) == Str::studly($offset); });
+    }
+
+    public function offsetGet($offset)
+    {
+        return collect($this->arguments())
+            ->first(function($_, $key) use($offset) { return Str::studly($key) == Str::studly($offset); });
+    }
+
+    public function offsetSet($offset, $value)
+    {
+        throw new LogicException('Argument data may not be mutated using array access.');
+    }
+
+    public function offsetUnset($offset)
+    {
+        throw new LogicException('Argument data may not be mutated using array access.');
     }
 }

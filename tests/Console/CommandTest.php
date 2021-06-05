@@ -5,6 +5,7 @@ namespace Illuminate\Tests\Console;
 use Illuminate\Console\Application;
 use Illuminate\Console\Command;
 use Illuminate\Console\OutputStyle;
+use Illuminate\Testing\Assert;
 use Mockery as m;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -144,5 +145,38 @@ class CommandTest extends TestCase
         $command->setOutput($output);
 
         $command->choice('Select all that apply.', ['option-1', 'option-2', 'option-3'], null, null, true);
+    }
+
+    public function testArgumentsCanBeCalledMagicallyAndViaArrayAccess()
+    {
+        $command = new class extends Command {
+
+            protected function getArguments()
+            {
+                return [
+                    new InputArgument('argument-one', InputArgument::REQUIRED, 'first test argument'),
+                    new InputArgument('argument_two', InputArgument::REQUIRED, 'second test argument'),
+                    new InputArgument('argument-three', InputArgument::OPTIONAL, 'third test argument', 'Foobar'),
+                    new InputArgument('four', InputArgument::OPTIONAL, 'third test argument'),
+                ];
+            }
+
+            public function handle()
+            {
+                Assert::assertEquals('hello-world', $this->argumentOne);
+                Assert::assertEquals('laravel', $this['argumentTwo']);
+                Assert::assertEquals('Foobar', $this->argument_three);
+                Assert::assertEquals('Taylor', $this->four);
+            }
+
+        };
+
+        $application = app();
+        $command->setLaravel($application);
+
+        $input = new ArrayInput(['argument-one' => 'hello-world', 'argument_two' => 'laravel', 'four' => 'Taylor']);
+        $output = new NullOutput;
+
+        $command->run($input, $output);
     }
 }
