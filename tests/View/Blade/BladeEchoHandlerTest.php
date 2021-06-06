@@ -20,7 +20,7 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
     public function testBladeHandlerCanInterceptRegularEchos()
     {
         $this->assertSame(
-            "<?php echo e(app('blade.compiler')->applyEchoHandler(\$exampleObject)); ?>",
+            "<?php \$__bladeCompiler = app('blade.compiler'); ?><?php echo e(\$__bladeCompiler->applyEchoHandler(\$exampleObject)); ?>",
             $this->compiler->compileString('{{$exampleObject}}')
         );
     }
@@ -28,7 +28,7 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
     public function testBladeHandlerCanInterceptRawEchos()
     {
         $this->assertSame(
-            "<?php echo app('blade.compiler')->applyEchoHandler(\$exampleObject); ?>",
+            "<?php \$__bladeCompiler = app('blade.compiler'); ?><?php echo \$__bladeCompiler->applyEchoHandler(\$exampleObject); ?>",
             $this->compiler->compileString('{!!$exampleObject!!}')
         );
     }
@@ -36,7 +36,7 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
     public function testBladeHandlerCanInterceptEscapedEchos()
     {
         $this->assertSame(
-            "<?php echo e(app('blade.compiler')->applyEchoHandler(\$exampleObject)); ?>",
+            "<?php \$__bladeCompiler = app('blade.compiler'); ?><?php echo e(\$__bladeCompiler->applyEchoHandler(\$exampleObject)); ?>",
             $this->compiler->compileString('{{{$exampleObject}}}')
         );
     }
@@ -44,7 +44,7 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
     public function testWhitespaceIsPreservedCorrectly()
     {
         $this->assertSame(
-            "<?php echo e(app('blade.compiler')->applyEchoHandler(\$exampleObject)); ?>\n\n",
+            "<?php \$__bladeCompiler = app('blade.compiler'); ?><?php echo e(\$__bladeCompiler->applyEchoHandler(\$exampleObject)); ?>\n\n",
             $this->compiler->compileString("{{\$exampleObject}}\n")
         );
     }
@@ -63,11 +63,7 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
 
         $exampleObject = new Fluent();
 
-        eval(
-            Str::of($this->compiler->compileString('{{$exampleObject}}'))
-            ->after('<?php')
-            ->beforeLast('?>')
-        );
+        eval(Str::of($this->compiler->compileString('{{$exampleObject}}'))->remove(['<?php', '?>']));
     }
 
     public function testHandlerLogicWorksCorrectlyWithSemicolon()
@@ -84,10 +80,6 @@ class BladeEchoHandlerTest extends AbstractBladeTestCase
 
         $exampleObject = new Fluent();
 
-        eval(
-        Str::of($this->compiler->compileString('{{$exampleObject;}}'))
-            ->after('<?php')
-            ->beforeLast('?>')
-        );
+        eval(Str::of($this->compiler->compileString('{{$exampleObject;}}'))->remove(['<?php', '?>']));
     }
 }

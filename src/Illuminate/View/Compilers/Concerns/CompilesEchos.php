@@ -123,6 +123,17 @@ trait CompilesEchos
     }
 
     /**
+     * Add an instance of the blade echo handler to the start of the compiled string.
+     *
+     * @param string $result
+     * @return string
+     */
+    protected function addBladeCompilerVariable($result)
+    {
+        return "<?php \$__bladeCompiler = app('blade.compiler'); ?>" . $result;
+    }
+
+    /**
      * Wrap the echoable value in an echo handler if applicable.
      *
      * @param  string  $value
@@ -130,7 +141,7 @@ trait CompilesEchos
      */
     protected function wrapInEchoHandler($value)
     {
-        return empty($this->echoHandlers) ? $value : 'app(\'blade.compiler\')->applyEchoHandler(' . Str::beforeLast($value, ';') . ')';
+        return empty($this->echoHandlers) ? $value : '$__bladeCompiler->applyEchoHandler(' . Str::beforeLast($value, ';') . ')';
     }
 
     /**
