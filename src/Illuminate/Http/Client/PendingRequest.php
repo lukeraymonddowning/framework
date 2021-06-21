@@ -141,6 +141,11 @@ class PendingRequest
     protected $request;
 
     /**
+     * The requested cache settings.
+     */
+    protected $cache = ['key' => null, 'ttl' => null];
+
+    /**
      * Create a new HTTP Client instance.
      *
      * @param  \Illuminate\Http\Client\Factory|null  $factory
@@ -728,16 +733,27 @@ class PendingRequest
      */
     protected function sendRequest(string $method, string $url, array $options = [])
     {
-        $clientMethod = $this->async ? 'requestAsync' : 'request';
+        $response = function() use($method, $url, $options) {
+            $clientMethod = $this->async ? 'requestAsync' : 'request';
+            $laravelData = $this->parseRequestData($method, $url, $options);
 
-        $laravelData = $this->parseRequestData($method, $url, $options);
+            return $this->buildClient()->$clientMethod($method, $url, $this->mergeOptions([
+                'laravel_data' => $laravelData,
+                'on_stats' => function ($transferStats) {
+                    $this->transferStats = $transferStats;
+                },
+            ], $options));
+        };
 
-        return $this->buildClient()->$clientMethod($method, $url, $this->mergeOptions([
-            'laravel_data' => $laravelData,
-            'on_stats' => function ($transferStats) {
-                $this->transferStats = $transferStats;
-            },
-        ], $options));
+        if ($this->cache['key'] && $this->factory->getCache()) {
+            return $this->factory->getCache()->remember(
+                $this->cache['key'],
+                $this->cache['ttl'],
+                $response
+            );
+        }
+
+        return value($response);
     }
 
     /**
@@ -955,6 +971,22 @@ class PendingRequest
     public function async(bool $async = true)
     {
         $this->async = $async;
+
+        return $this;
+    }
+
+    /**
+     * Cache the request using the given key for a set timeout.
+     *
+     * @param string $key
+     * @param \DateInterval|int|null $ttl
+     *
+     * @return $this
+     */
+    public function cache(string $key, $ttl = null)
+    {
+        $this->cache['key'] = $key;
+        $this->cache['ttl'] = $ttl;
 
         return $this;
     }

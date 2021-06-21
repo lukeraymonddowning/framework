@@ -6,6 +6,7 @@ use Closure;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response as Psr7Response;
 use GuzzleHttp\TransferStats;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
@@ -40,6 +41,7 @@ use PHPUnit\Framework\Assert as PHPUnit;
  * @method \Illuminate\Http\Client\PendingRequest withUserAgent(string $userAgent)
  * @method \Illuminate\Http\Client\PendingRequest withoutRedirecting()
  * @method \Illuminate\Http\Client\PendingRequest withoutVerifying()
+ * @method \Illuminate\Http\Client\PendingRequest cache(string $key, \DateInterval|int $ttl = null)
  * @method array pool(callable $callback)
  * @method \Illuminate\Http\Client\Response delete(string $url, array $data = [])
  * @method \Illuminate\Http\Client\Response get(string $url, array|string|null $query = null)
@@ -63,6 +65,13 @@ class Factory
      * @var \Illuminate\Contracts\Events\Dispatcher|null
      */
     protected $dispatcher;
+
+    /**
+     * The cache implementation.
+     *
+     * @var \Illuminate\Contracts\Cache\Repository|null
+     */
+    protected $cache;
 
     /**
      * The stub callables that will handle requests.
@@ -98,9 +107,10 @@ class Factory
      * @param  \Illuminate\Contracts\Events\Dispatcher|null  $dispatcher
      * @return void
      */
-    public function __construct(Dispatcher $dispatcher = null)
+    public function __construct(Dispatcher $dispatcher = null, Repository $cache = null)
     {
         $this->dispatcher = $dispatcher;
+        $this->cache = $cache;
 
         $this->stubCallbacks = collect();
     }
@@ -370,6 +380,16 @@ class Factory
     public function getDispatcher()
     {
         return $this->dispatcher;
+    }
+
+    /**
+     * Get the current cache implementation.
+     *
+     * @return \Illuminate\Contracts\Cache\Repository|null
+     */
+    public function getCache()
+    {
+        return $this->cache;
     }
 
     /**

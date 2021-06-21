@@ -4,6 +4,7 @@ namespace Illuminate\Tests\Http;
 
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response as Psr7Response;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Client\Events\RequestSending;
 use Illuminate\Http\Client\Events\ResponseReceived;
@@ -954,7 +955,7 @@ class HttpClientTest extends TestCase
 
     public function testTransferStatsArePresentWhenFakingTheRequestUsingAPromiseResponse()
     {
-        $this->factory->fake(['https://example.com' => $this->factory->response()]);
+        $this->factory->fake(['example.com' => $this->factory->response()]);
         $effectiveUri = $this->factory->get('https://example.com')->effectiveUri();
 
         $this->assertSame('https://example.com', (string) $effectiveUri);
@@ -968,10 +969,33 @@ class HttpClientTest extends TestCase
 
         $factory = new Factory($events);
 
+        $factory->fake(['example.com' => $this->factory->response()]);
+
         $client = $factory->timeout(10);
         $clonedClient = clone $client;
 
         $clonedClient->get('https://example.com');
+
+        m::close();
+    }
+
+    public function testRequestsCanBeCached()
+    {
+        $cache = m::mock(Repository::class);
+        $cache->shouldReceive('remember')
+            ->twice()
+            ->withSomeOfArgs('http-cache-key', 60)
+            ->andReturn(new Psr7Response(200, [], 'hello world'));
+
+        $factory = new Factory(null, $cache);
+        $factory->fake(['example.com' => $factory->sequence(['hello world', 'I should not be called'])]);
+        $request = new PendingRequest($factory);
+
+        $firstResponse = $request->cache('http-cache-key', 60)->get('https://example.com');
+        $secondResponse = $request->cache('http-cache-key', 60)->get('https://example.com');
+
+        $this->assertEquals($firstResponse->body(), 'hello world');
+        $this->assertEquals($secondResponse->body(), 'hello world');
 
         m::close();
     }
