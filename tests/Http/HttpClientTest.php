@@ -988,11 +988,14 @@ class HttpClientTest extends TestCase
             ->andReturn(new Psr7Response(200, [], 'hello world'));
 
         $factory = new Factory(null, $cache);
-        $factory->fake(['example.com' => $factory->sequence(['hello world', 'I should not be called'])]);
+        $factory->fake([
+            'example.com' => $factory->response('hello world'),
+            'somewhere-else.com' => $factory->response('something else'),
+        ]);
         $request = new PendingRequest($factory);
 
         $firstResponse = $request->cache('http-cache-key', 60)->get('https://example.com');
-        $secondResponse = $request->cache('http-cache-key', 60)->get('https://example.com');
+        $secondResponse = $request->cache('http-cache-key', 60)->get('https://somewhere-else.com');
 
         $this->assertEquals($firstResponse->body(), 'hello world');
         $this->assertEquals($secondResponse->body(), 'hello world');
